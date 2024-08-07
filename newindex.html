@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income and Expenditure Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .top-right-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .box {
+            padding: 15px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            background-color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 10px;
+            text-align: center;
+        }
+        .button {
+            margin: 40px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .tables-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px 0;
+        }
+        table {
+            width: 45%;
+            border-collapse: collapse;
+            margin: 0 10px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+        .sort-button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .sort-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-right-box">
+        <div id="totalAmountBox" class="box">$0.00</div>
+        <div class="total-label">Total Amount</div>
+        <button class="button" onclick="redirectToTotalPage()">Calculate Total</button>
+    </div>
+
+    <div class="button-container">
+        <button class="button" onclick="addIncome()">Add Income</button>
+        <button class="button" onclick="addExpenditure()">Add Expenditure</button>
+    </div>
+
+    <div class="tables-container">
+        <div>
+            <center><h2>Income</h2></center>
+            <button class="sort-button" onclick="sortTable('income', 'asc')">Sort Income Ascending</button>
+            <button class="sort-button" onclick="sortTable('income', 'desc')">Sort Income Descending</button>
+            <table id="incomeTable">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Description</th>
+                        <th>Income</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div>
+            <center><h2>Expenditure</h2></center>
+            <button class="sort-button" onclick="sortTable('expenditure', 'asc')">Sort Expenditure Ascending</button>
+            <button class="sort-button" onclick="sortTable('expenditure', 'desc')">Sort Expenditure Descending</button>
+            <table id="expenditureTable">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Description</th>
+                        <th>Expenditure</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function addIncome() {
+            const description = prompt("Enter income description:");
+            const amount = parseFloat(prompt("Enter income amount:"));
+            if (isNaN(amount) || amount <= 0 || !description) return alert('Invalid input!');
+
+            const dateTime = new Date().toLocaleString();
+            const incomeTable = document.getElementById('incomeTable').getElementsByTagName('tbody')[0];
+            const row = incomeTable.insertRow();
+            row.insertCell(0).textContent = dateTime;
+            row.insertCell(1).textContent = description;
+            row.insertCell(2).textContent = `$${amount.toFixed(2)}`;
+
+            saveEntry('income', dateTime, description, amount);
+        }
+
+        function addExpenditure() {
+            const description = prompt("Enter expenditure description:");
+            const amount = parseFloat(prompt("Enter expenditure amount:"));
+            if (isNaN(amount) || amount <= 0 || !description) return alert('Invalid input!');
+
+            const dateTime = new Date().toLocaleString();
+            const expenditureTable = document.getElementById('expenditureTable').getElementsByTagName('tbody')[0];
+            const row = expenditureTable.insertRow();
+            row.insertCell(0).textContent = dateTime;
+            row.insertCell(1).textContent = description;
+            row.insertCell(2).textContent = `$${amount.toFixed(2)}`;
+
+            saveEntry('expenditure', dateTime, description, amount);
+        }
+
+        function saveEntry(type, dateTime, description, amount) {
+            const entries = JSON.parse(localStorage.getItem('entries')) || [];
+            entries.push({ type, dateTime, description, amount });
+            localStorage.setItem('entries', JSON.stringify(entries));
+            displayEntries();
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const entries = JSON.parse(localStorage.getItem('entries')) || [];
+            const total = entries.reduce((sum, entry) => {
+                return entry.type === 'income' ? sum + entry.amount : sum - entry.amount;
+            }, 0);
+            document.getElementById('totalAmountBox').innerText = `$${total.toFixed(2)}`;
+            localStorage.setItem('totalAmount', total.toFixed(2)); // Store total in local storage
+        }
+
+        function redirectToTotalPage() {
+            calculateTotal(); // Ensure total is updated before redirecting
+            window.location.href = 'total.html';
+        }
+
+        function displayEntries() {
+            const entries = JSON.parse(localStorage.getItem('entries')) || [];
+            const incomeTable = document.getElementById('incomeTable').getElementsByTagName('tbody')[0];
+            const expenditureTable = document.getElementById('expenditureTable').getElementsByTagName('tbody')[0];
+
+            incomeTable.innerHTML = '';
+            expenditureTable.innerHTML = '';
+
+            entries.forEach(entry => {
+                const table = entry.type === 'income' ? incomeTable : expenditureTable;
+                const row = table.insertRow();
+                row.insertCell(0).textContent = entry.dateTime;
+                row.insertCell(1).textContent = entry.description;
+                row.insertCell(2).textContent = `$${entry.amount.toFixed(2)}`;
+            });
+        }
+
+        function sortTable(type, order) {
+            const table = type === 'income' ? document.getElementById('incomeTable') : document.getElementById('expenditureTable');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+
+            rows.sort((rowA, rowB) => {
+                const dateA = new Date(rowA.cells[0].textContent);
+                const dateB = new Date(rowB.cells[0].textContent);
+                return order === 'asc' ? dateA - dateB : dateB - dateA;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        window.onload = function() {
+            displayEntries();
+            calculateTotal(); // Update the total amount on page load
+        };
+    </script>
+</body>
+</html>
